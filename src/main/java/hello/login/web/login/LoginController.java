@@ -19,6 +19,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.validation.Valid;
 
+// Login 성공 -> Login home 으로 이동
 @Slf4j
 @Controller
 @RequiredArgsConstructor
@@ -26,61 +27,69 @@ public class LoginController {
     private final LoginService loginService;
     private final SessionManager sessionManager;
 
+    // 로그인 폼 처리
     @GetMapping("/login")
     public String loginForm(@ModelAttribute("loginForm") LoginForm form) {
         return "login/loginForm";
     }
 
+    // [Login V1] 쿠키 사용
 //    @PostMapping("/login")
-    public String login(@Valid @ModelAttribute LoginForm form, BindingResult bindingResult, HttpServletResponse response) {
+    public String login(@Valid @ModelAttribute LoginForm form,
+                        BindingResult bindingResult,
+                        HttpServletResponse response)
+    {
         if (bindingResult.hasErrors()) {
             return "login/loginForm";
         }
 
         Member loginMember = loginService.login(form.getLoginId(), form.getPassword());
         if (loginMember == null) {
-            bindingResult.reject("loginFail", "아이드 또는 비밀번호가 맞지 않습니다.");
+            bindingResult.reject("loginFail", "아이디 또는 비밀번호가 맞지 않습니다.");
             return "login/loginForm";
         }
 
-        // 로그인 성공 시 처리
-
-        // 쿠키에 시간 정보를 주지 않으면 세션 쿠키(브라우저 종료시 모두 종료)
+        // 브라우저 - 서버 사이에서 로그인 유지하는 방법 : 쿠키
+        // 세션 쿠키 : 쿠키에 시간 정보를 주지 않으면 세션 쿠키(브라우저 종료시 모두 종료)
         Cookie idCookie = new Cookie("memberId", String.valueOf(loginMember.getId()));
-        response.addCookie(idCookie);
-
+        response.addCookie(idCookie); // 응답할 때, 쿠키를 담아서 전송
         return "redirect:/";
     }
 
+    // [Login V2] 직접 만든 세션 사용
 //    @PostMapping("/login")
-    public String loginV2(@Valid @ModelAttribute LoginForm form, BindingResult bindingResult, HttpServletResponse response) {
+    public String loginV2(@Valid @ModelAttribute LoginForm form,
+                          BindingResult bindingResult,
+                          HttpServletResponse response)
+    {
         if (bindingResult.hasErrors()) {
             return "login/loginForm";
         }
 
         Member loginMember = loginService.login(form.getLoginId(), form.getPassword());
         if (loginMember == null) {
-            bindingResult.reject("loginFail", "아이드 또는 비밀번호가 맞지 않습니다.");
+            bindingResult.reject("loginFail", "아이디 또는 비밀번호가 맞지 않습니다.");
             return "login/loginForm";
         }
-
-        // 로그인 성공 시 처리
 
         // 세션 관리자를 통해서 세션을 생성하고, 회원 데이터에 보관
         sessionManager.createSession(loginMember, response);
-
         return "redirect:/";
     }
 
+    // [Login V3] 서블릿이 제공하는 HttpSession 사용
 //    @PostMapping("/login")
-    public String loginV3(@Valid @ModelAttribute LoginForm form, BindingResult bindingResult, HttpServletRequest request) {
+    public String loginV3(@Valid @ModelAttribute LoginForm form,
+                          BindingResult bindingResult,
+                          HttpServletRequest request)
+    {
         if (bindingResult.hasErrors()) {
             return "login/loginForm";
         }
 
         Member loginMember = loginService.login(form.getLoginId(), form.getPassword());
         if (loginMember == null) {
-            bindingResult.reject("loginFail", "아이드 또는 비밀번호가 맞지 않습니다.");
+            bindingResult.reject("loginFail", "아이디 또는 비밀번호가 맞지 않습니다.");
             return "login/loginForm";
         }
 
@@ -89,21 +98,22 @@ public class LoginController {
         HttpSession session = request.getSession();
         // 세션에 로그인 회원 정보 보관
         session.setAttribute(SessionConst.LOGIN_MEMBER, loginMember);
-
         return "redirect:/";
     }
 
+    // [loginV4] 필터 적용
     @PostMapping("/login")
     public String loginV4(@Valid @ModelAttribute LoginForm form, BindingResult bindingResult,
                           @RequestParam(defaultValue = "/") String redirectURL,
-                          HttpServletRequest request) {
+                          HttpServletRequest request)
+    {
         if (bindingResult.hasErrors()) {
             return "login/loginForm";
         }
 
         Member loginMember = loginService.login(form.getLoginId(), form.getPassword());
         if (loginMember == null) {
-            bindingResult.reject("loginFail", "아이드 또는 비밀번호가 맞지 않습니다.");
+            bindingResult.reject("loginFail", "아이디 또는 비밀번호가 맞지 않습니다.");
             return "login/loginForm";
         }
 
@@ -112,31 +122,34 @@ public class LoginController {
         HttpSession session = request.getSession();
         // 세션에 로그인 회원 정보 보관
         session.setAttribute(SessionConst.LOGIN_MEMBER, loginMember);
-
         return "redirect:" + redirectURL;
     }
 
+    // 쿠키 사용
 //    @PostMapping("logout")
     public String logout(HttpServletResponse response) {
         expireCookie(response, "memberId");
         return "redirect:/";
     }
 
+    // 세션 사용
 //    @PostMapping("logout")
     public String logoutV2(HttpServletRequest request) {
         sessionManager.expire(request);
         return "redirect:/";
     }
 
+    // 서블릿이 제공하는 HttpSession 사용
     @PostMapping("logout")
     public String logoutV3(HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
+        HttpSession session = request.getSession(false); // true 로 가져오면, 세션을 생성함
         if (session != null) {
             session.invalidate();
         }
         return "redirect:/";
     }
 
+    // 쿠키 시간 제거
     private void expireCookie(HttpServletResponse response, String cookieName) {
         Cookie cookie = new Cookie(cookieName, null);
         cookie.setMaxAge(0);

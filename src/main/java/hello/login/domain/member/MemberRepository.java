@@ -14,6 +14,7 @@ public class MemberRepository {
     public Member save(Member member) {
         member.setId(++sequence);
         log.info("save: member={}", member);
+
         store.put(member.getId(), member);
         return member;
     }
@@ -22,9 +23,9 @@ public class MemberRepository {
         return store.get(id);
     }
 
+    // Optional : 값이 있을 수도 있고, 없을 수도 있음
     public Optional<Member> findByLoginId(String loginId) {
-        List<Member> all = findAll();
-
+//        List<Member> all = findAll();
 //        for (Member member : all) {
 //            if (member.getLoginId().equals(loginId)) {
 //                return Optional.of(member);
@@ -34,13 +35,14 @@ public class MemberRepository {
 
         return findAll().stream()
                 .filter(member -> member.getLoginId().equals(loginId))
-                .findAny();
+                .findFirst();
     }
 
     public List<Member> findAll() {
-        return new ArrayList<>(store.values());
+        return new ArrayList<>(store.values()); // Memver 를 리스트 타입으로 반환
     }
 
+    // 테스트용 초기화
     public void clearStore() {
         store.clear();
     }

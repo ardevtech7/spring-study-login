@@ -24,15 +24,23 @@ public class LoginMemberArgumentResolver implements HandlerMethodArgumentResolve
         return hasLoginAnnotation && hasMemberType;
     }
 
+    // 위 메소드가 true 일 경우, 해당 resolveArgument 메소드가 실행
     @Override
-    public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
+    public Object resolveArgument(MethodParameter parameter,
+                                  ModelAndViewContainer mavContainer,
+                                  NativeWebRequest webRequest,
+                                  WebDataBinderFactory binderFactory) throws Exception
+    {
         log.info("resolverArgument 실행");
 
         HttpServletRequest request = (HttpServletRequest) webRequest.getNativeRequest();
         HttpSession session = request.getSession(false);
+
         if (session == null) {
             return null;
         }
+
+        // 반환값 : Member
         return session.getAttribute(SessionConst.LOGIN_MEMBER);
     }
 }

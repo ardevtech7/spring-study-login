@@ -5,8 +5,6 @@ import hello.login.domain.member.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
-
 @Service
 @RequiredArgsConstructor
 public class LoginService {
@@ -27,9 +25,9 @@ public class LoginService {
 //        Optional<Member> byLoginId = memberRepository.findByLoginId(loginId);
 //        return byLoginId.filter(member -> member.getPassword().equals(password)).orElse(null);
 
+        // id/pw 로그인 요청 -> 기존 id로 검색해서 가져온 정보의 pw 와 같은지 확인
         return memberRepository.findByLoginId(loginId)
                 .filter(member -> member.getPassword().equals(password))
                 .orElse(null);
-
     }
 }
